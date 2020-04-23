@@ -74,7 +74,9 @@ const getStyleLoaders = (cssOptions, preProcessor) => {
   return loaders;
 };
 
-fs.emptyDirSync(path.resolve(__dirname,'../build'))
+if(mode == 'production'){
+  fs.emptyDirSync(path.resolve(__dirname,'../build'))
+}
 
 const config = {
   mode,
@@ -82,7 +84,10 @@ const config = {
     index: path.resolve(__dirname,'../src/index.js')
   },
   output: {
-    filename: 'js/[name].[contenthash:8].js',
+    // filename: 'js/[name].[contenthash:8].js',
+    filename: isEnvProduction
+        ? 'js/[name].[contenthash:8].js'
+        : isEnvDevelopment && 'js/bundle.js',
     path: path.resolve(__dirname,'../build/static/'),
     publicPath:'/static/',
   },
@@ -185,6 +190,33 @@ const config = {
 if(mode == 'development'){
   config.devtool= 'cheap-module-source-map'
   config.watch = true
+  config.devServer={
+    hot: true,
+    // contentBase: path.join(__dirname, '../dist'),
+    contentBase:false,
+    compress: true,
+    port: 9000,
+    before:function(app, server, compiler){
+      // app.use('/static/js/public/',express.static(path.join(__dirname, '../public')))
+      app.get('/',function(req,res){
+        res.send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <meta http-equiv="X-UA-Compatible" content="ie=edge">
+          <title>Document</title>
+        </head>
+        <body>
+          <div id="root"></div>
+          <script src="/static/js/bundle.js"></script>
+        </body>
+        </html>
+        `)
+      })
+    }
+  }
 }else{
   // config.optimization={
   //   minimize: true,
@@ -194,5 +226,6 @@ if(mode == 'development'){
   //   ]
   // }
 }
+
 
 module.exports = config
